@@ -6,12 +6,75 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 ## Tech Stack
 - **Runtime**: Bun (replacing Node.js, npm, pnpm)
 - **Frontend**: Next.js 14+ with TailwindCSS and MagicUI components
-- **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL for relational data, Redis for caching/queues
-- **Storage**: S3/MinIO for object storage
+- **Backend**: Express.js with TypeScript (migrating to Bun.serve)
+- **Authentication**: Clerk for user auth and management
+- **Database**: Convex for real-time data sync and backend-as-a-service
+- **Caching/Queues**: Redis for job queues and caching
+- **Storage**: S3/MinIO for object storage (logos and generated assets)
 - **Queue System**: BullMQ for job processing
 - **AI/ML**: Diffusion models for background generation
 - **Deployment**: Docker containers, Kubernetes for orchestration
+
+---
+
+## Convex Database Integration
+
+Convex serves as the primary database and real-time backend for LogoMorph, providing:
+
+### Core Benefits
+- **Real-time Updates**: Automatic UI updates when data changes
+- **Type Safety**: End-to-end TypeScript with schema validation
+- **Built-in Scaling**: Automatic horizontal scaling without configuration
+- **ACID Transactions**: Consistent data operations
+- **Reactive Queries**: Subscriptions update automatically
+- **File Storage Integration**: References to S3-stored assets
+
+### Key Features Used
+1. **Mutations**: For creating/updating logos, jobs, and presets
+2. **Queries**: For fetching user data with real-time updates
+3. **Actions**: For integrating with external services (S3, AI models)
+4. **Scheduled Functions**: For job processing and cleanup
+5. **HTTP Endpoints**: For webhook handlers and public API
+
+### Integration Pattern
+- Convex handles all database operations and real-time sync
+- S3/MinIO stores actual logo files and generated assets
+- Redis manages job queues for AI processing
+- Convex stores metadata and references to S3 objects
+
+---
+
+## Clerk Authentication Integration
+
+Clerk will be the primary authentication and user management solution throughout the application, providing:
+
+### Core Features
+- **User Authentication**: Sign-up, sign-in, multi-factor authentication
+- **OAuth Providers**: Google, GitHub, Microsoft, and more
+- **Organizations**: Team workspaces and collaboration
+- **User Management**: Profile management, user metadata, roles
+- **Session Management**: Secure JWT-based sessions
+- **Webhooks**: Real-time user events and synchronization
+
+### Integration Points
+1. **Frontend (Next.js)**
+   - `@clerk/nextjs` for React components and hooks
+   - Protected routes using middleware
+   - User context throughout the application
+   - Organization switcher for team workspaces
+
+2. **Backend (Express)**
+   - `@clerk/clerk-sdk-node` for API authentication
+   - JWT verification for API endpoints
+   - User metadata for quotas and permissions
+   - Webhook handlers for user lifecycle events
+
+3. **Database (Convex)**
+   - Store Clerk user IDs in Convex documents
+   - Link all user data to Clerk identities
+   - Real-time sync with Convex reactive queries
+   - Sync user metadata with Clerk webhooks
+   - Organization data for team features
 
 ---
 
@@ -23,13 +86,17 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Set up ESLint and Prettier for code consistency
 - [ ] Configure Git hooks (Husky) for pre-commit checks
 - [ ] Set up basic CI/CD pipeline with GitHub Actions
+- [ ] Set up Clerk account and configure application
+- [ ] Configure Clerk environment variables
 
 ### 0.2 Core Infrastructure Setup
-- [ ] Initialize PostgreSQL database with Docker
-- [ ] Set up Redis instance for caching and job queues
+- [ ] Set up Convex project and configure schema
+- [ ] Initialize Convex functions and mutations
+- [ ] Set up Redis instance for job queues
 - [ ] Configure S3/MinIO for object storage
-- [ ] Create Docker Compose for local development
+- [ ] Create Docker Compose for local development (Redis, MinIO)
 - [ ] Set up environment configuration (.env files)
+- [ ] Configure Convex auth integration with Clerk
 
 ### 0.3 Basic Project Structure
 - [ ] Create backend API structure with Express + TypeScript
@@ -37,11 +104,15 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Configure TailwindCSS with custom theme
 - [ ] Integrate MagicUI component library from 21st.dev
 - [ ] Set up shared types/interfaces package
+- [ ] Install and configure @clerk/nextjs for frontend
+- [ ] Install and configure @clerk/clerk-sdk-node for backend
+- [ ] Set up Clerk middleware for protected routes
 
 ### Deliverables
-- Working development environment
+- Working development environment with Clerk authentication configured
 - Basic project structure with frontend/backend separation
 - Docker-based local infrastructure
+- Clerk authentication integrated in both frontend and backend
 
 ---
 
@@ -52,8 +123,10 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Implement file validation (type, size, dimensions)
 - [ ] Support SVG and PNG formats initially
 - [ ] Store files in S3/MinIO with proper organization
-- [ ] Create database models for logos and metadata
+- [ ] Create Convex schema for logos and metadata
+- [ ] Implement Convex mutations for logo storage
 - [ ] Implement file sanitization for security
+- [ ] Set up Convex file references to S3 URLs
 
 ### 1.2 Logo Analysis Module
 - [ ] Build SVG parser to extract paths and components
@@ -61,7 +134,8 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Extract bounding box and safe margins
 - [ ] Determine aspect ratio and dimensions
 - [ ] Generate basic foreground/background masks
-- [ ] Store analysis metadata in database
+- [ ] Store analysis metadata in Convex documents
+- [ ] Create Convex queries for metadata retrieval
 
 ### 1.3 Rule-Based Layout Engine
 - [ ] Implement composition logic for different aspect ratios
@@ -74,6 +148,8 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Handle logo positioning (center, aligned variations)
 
 ### 1.4 Basic Frontend UI
+- [ ] Implement Clerk authentication flow (sign-in/sign-up pages)
+- [ ] Create protected dashboard with Clerk user context
 - [ ] Create upload interface with drag-and-drop
 - [ ] Build file validation and preview
 - [ ] Implement preset selector with 5 initial presets:
@@ -84,20 +160,23 @@ LogoMorph is a web application that enables users to upload a logo and automatic
   - Profile picture (400×400)
 - [ ] Create preview grid showing all variants
 - [ ] Add individual asset download functionality
+- [ ] Display user info from Clerk in UI
 
 ### 1.5 Job Processing System
 - [ ] Set up BullMQ with Redis backend
 - [ ] Create worker processes for variant generation
-- [ ] Implement job status tracking
-- [ ] Build polling endpoints for status updates
+- [ ] Implement job status tracking with user association (Clerk user ID)
+- [ ] Build polling endpoints for status updates (protected with Clerk)
 - [ ] Add basic error handling and retry logic
 - [ ] Create job cleanup routines
+- [ ] Ensure job isolation per user
 
 ### Deliverables
 - Functional MVP with basic logo variant generation
 - Support for 5 preset formats
-- Simple UI for upload and preview
-- Asynchronous processing system
+- Simple UI for upload and preview with Clerk authentication
+- Asynchronous processing system with user isolation
+- User dashboard showing their uploaded logos and generated variants
 
 ---
 
@@ -117,10 +196,11 @@ LogoMorph is a web application that enables users to upload a logo and automatic
   - **Mobile**: iOS app icon, Android app icon, splash screens
   - **Web**: Open Graph, Twitter Card, email signature
   - **Print**: Business card, letterhead
-- [ ] Create preset management system
-- [ ] Implement user custom presets
+- [ ] Create preset management system with user-specific presets
+- [ ] Implement user custom presets (saved per Clerk user)
 - [ ] Add preset inheritance and variations
-- [ ] Build preset recommendation engine
+- [ ] Build preset recommendation engine based on user history
+- [ ] Enable preset sharing between team members (using Clerk organizations)
 
 ### 2.3 Interactive Editor
 - [ ] Build canvas-based preview editor using HTML5 Canvas
@@ -197,21 +277,25 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 
 ### 4.1 RESTful API Development
 - [ ] Build comprehensive API with OpenAPI documentation
-- [ ] Implement JWT-based authentication
-- [ ] Create API key management system
-- [ ] Add rate limiting with configurable tiers
+- [ ] Integrate Clerk authentication for API endpoints
+- [ ] Use Clerk's JWT verification for API authentication
+- [ ] Create API key management system (linked to Clerk users)
+- [ ] Add rate limiting with configurable tiers based on Clerk metadata
 - [ ] Implement request/response validation
 - [ ] Build webhook support for async operations
 - [ ] Create API versioning strategy
+- [ ] Implement Clerk webhook handlers for user events
 
 ### 4.2 User Management System
-- [ ] Implement user registration with email verification
-- [ ] Create OAuth integration (Google, GitHub)
-- [ ] Build project/workspace organization
-- [ ] Implement role-based access control
-- [ ] Add usage tracking and analytics
-- [ ] Create billing and subscription management
-- [ ] Build quota management system
+- [ ] Configure Clerk user registration with email verification
+- [ ] Set up OAuth providers in Clerk (Google, GitHub, Microsoft)
+- [ ] Implement Clerk Organizations for team workspaces
+- [ ] Configure role-based access control using Clerk roles
+- [ ] Add usage tracking linked to Clerk user IDs
+- [ ] Integrate billing with Stripe (synced with Clerk users)
+- [ ] Build quota management using Clerk user metadata
+- [ ] Implement user profile management with Clerk
+- [ ] Set up multi-factor authentication through Clerk
 
 ### 4.3 Performance Optimization
 - [ ] Implement Redis caching for frequently accessed data
@@ -246,9 +330,10 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Implement horizontal pod autoscaling
 - [ ] Configure GPU node pools for AI workloads
 - [ ] Set up multi-region deployment strategy
-- [ ] Implement database replication
-- [ ] Configure load balancing
-- [ ] Set up backup and disaster recovery
+- [ ] Leverage Convex's built-in scaling and replication
+- [ ] Configure load balancing for AI services
+- [ ] Set up backup strategies for S3 assets
+- [ ] Implement Convex snapshot backups
 
 ### 5.2 Monitoring & Observability
 - [ ] Integrate Prometheus for metrics collection
@@ -297,13 +382,15 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 - [ ] Create template marketplace
 
 ### 6.2 Collaboration Features
-- [ ] Implement team workspaces
-- [ ] Add commenting and annotation system
-- [ ] Create version control for designs
-- [ ] Build approval workflows
-- [ ] Add real-time collaboration
-- [ ] Implement activity feeds
-- [ ] Create notification system
+- [ ] Implement team workspaces using Clerk Organizations
+- [ ] Add commenting and annotation system with user attribution
+- [ ] Create version control for designs linked to user accounts
+- [ ] Build approval workflows with role-based permissions
+- [ ] Add real-time collaboration using WebSockets
+- [ ] Implement activity feeds showing team member actions
+- [ ] Create notification system integrated with Clerk user preferences
+- [ ] Enable team member invitations through Clerk
+- [ ] Set up organization-level settings and permissions
 
 ### 6.3 Integration Ecosystem
 - [ ] Build Figma plugin
@@ -369,40 +456,116 @@ LogoMorph is a web application that enables users to upload a logo and automatic
 ```
 /frontend
 ├── app/                  # Next.js App Router
-│   ├── (auth)/          # Authentication pages
-│   ├── dashboard/       # Main dashboard
-│   ├── editor/          # Logo editor
+│   ├── (auth)/          # Clerk authentication pages
+│   │   ├── sign-in/     # Sign-in page
+│   │   ├── sign-up/     # Sign-up page
+│   │   └── sso-callback/# SSO callback handler
+│   ├── dashboard/       # Main dashboard (protected)
+│   ├── editor/          # Logo editor (protected)
 │   ├── api/            # API routes (if needed)
-│   └── layout.tsx      # Root layout
+│   └── layout.tsx      # Root layout with ClerkProvider
 ├── components/
 │   ├── ui/             # MagicUI components
+│   ├── auth/           # Clerk auth components
 │   ├── editor/         # Editor components
 │   ├── upload/         # Upload components
 │   └── preview/        # Preview components
 ├── lib/
-│   ├── api/            # API client
+│   ├── api/            # API client with Clerk auth
 │   ├── hooks/          # Custom React hooks
+│   ├── clerk/          # Clerk utilities
 │   ├── utils/          # Utility functions
 │   └── store/          # State management
+├── middleware.ts        # Clerk middleware for route protection
 ├── styles/
 │   └── globals.css     # Global styles
 └── public/             # Static assets
 ```
 
-### Database Schema (PostgreSQL)
+### Database Schema (Convex)
 
-```sql
--- Core tables
-users (id, email, name, password_hash, created_at, updated_at)
-logos (id, user_id, filename, storage_path, format, metadata, created_at)
-jobs (id, user_id, logo_id, type, status, options, result, created_at, updated_at)
-presets (id, name, width, height, settings, is_system, user_id, created_at)
-generated_assets (id, job_id, preset_id, storage_path, format, created_at)
+```typescript
+// Convex Schema Definition (schema.ts)
 
--- Supporting tables
-user_sessions (id, user_id, token, expires_at)
-api_keys (id, user_id, key_hash, name, permissions, created_at)
-usage_logs (id, user_id, action, metadata, created_at)
+// Users table (synced with Clerk)
+export const users = defineTable({
+  clerkUserId: v.string(),
+  clerkOrgId: v.optional(v.string()),
+  email: v.string(),
+  metadata: v.optional(v.object({
+    tier: v.string(),
+    quotaUsed: v.number(),
+    quotaLimit: v.number(),
+  })),
+}).index("by_clerk_user", ["clerkUserId"])
+  .index("by_clerk_org", ["clerkOrgId"]);
+
+// Logos table
+export const logos = defineTable({
+  clerkUserId: v.string(),
+  clerkOrgId: v.optional(v.string()),
+  filename: v.string(),
+  storagePath: v.string(), // S3 URL
+  format: v.string(), // "svg" | "png" | "jpg"
+  metadata: v.object({
+    width: v.number(),
+    height: v.number(),
+    boundingBox: v.optional(v.object({
+      x: v.number(),
+      y: v.number(),
+      width: v.number(),
+      height: v.number(),
+    })),
+    colorPalette: v.optional(v.array(v.string())),
+  }),
+}).index("by_user", ["clerkUserId"])
+  .index("by_org", ["clerkOrgId"]);
+
+// Jobs table for processing queue
+export const jobs = defineTable({
+  clerkUserId: v.string(),
+  logoId: v.id("logos"),
+  type: v.string(), // "generate" | "export"
+  status: v.string(), // "pending" | "processing" | "completed" | "failed"
+  options: v.any(),
+  result: v.optional(v.any()),
+}).index("by_user", ["clerkUserId"])
+  .index("by_status", ["status"]);
+
+// Presets table
+export const presets = defineTable({
+  name: v.string(),
+  width: v.number(),
+  height: v.number(),
+  settings: v.any(),
+  isSystem: v.boolean(),
+  clerkUserId: v.optional(v.string()),
+  clerkOrgId: v.optional(v.string()),
+}).index("by_user", ["clerkUserId"])
+  .index("system_presets", ["isSystem"]);
+
+// Generated assets table
+export const generatedAssets = defineTable({
+  jobId: v.id("jobs"),
+  presetId: v.id("presets"),
+  storagePath: v.string(), // S3 URL
+  format: v.string(),
+}).index("by_job", ["jobId"]);
+
+// API keys table
+export const apiKeys = defineTable({
+  clerkUserId: v.string(),
+  keyHash: v.string(),
+  name: v.string(),
+  permissions: v.array(v.string()),
+}).index("by_user", ["clerkUserId"]);
+
+// Usage logs table
+export const usageLogs = defineTable({
+  clerkUserId: v.string(),
+  action: v.string(),
+  metadata: v.any(),
+}).index("by_user", ["clerkUserId"]);
 ```
 
 ---
@@ -521,5 +684,6 @@ The plan emphasizes:
 3. **Technical Excellence**: Best practices, testing, monitoring
 4. **Scalability**: Built for growth from the beginning
 5. **Risk Management**: Fallbacks and mitigation strategies throughout
+6. **Authentication First**: Clerk integration from day one for secure, scalable user management
 
 By following this plan, the LogoMorph platform can be successfully developed and launched within the 20-week timeline, with room for adjustments and improvements based on real-world usage and feedback.
