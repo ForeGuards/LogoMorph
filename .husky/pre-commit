@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+set -eu
+if ! command -v bunx >/dev/null 2>&1; then
+  echo "Error: bunx not found. Please install Bun." >&2
+  exit 1
+fi
+echo "🪄 Running pre-commit (lint-staged)"
+exec bunx lint-staged

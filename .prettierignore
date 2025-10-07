@@ -1,0 +1,8 @@
+node_modules
+build
+dist
+.next
+bun.lock*
+*.log
+coverage
+convex/_generated
