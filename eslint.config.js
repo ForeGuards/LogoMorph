@@ -17,7 +17,14 @@ const compat = new FlatCompat();
 export default [
   // Ignore generated and build output
   {
-    ignores: ['node_modules/', 'dist/', 'build/', '.next/', 'convex/_generated/'],
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'build/',
+      '.next/',
+      'apps/frontend/.next/',
+      'convex/_generated/',
+    ],
   },
 
   // Equivalent to extends: ["eslint:recommended"]
@@ -26,4 +33,9 @@ export default [
   // Equivalent to extends: ["plugin:@typescript-eslint/recommended"]
   // This also sets the parser to @typescript-eslint/parser for TS files
   ...compat.extends('plugin:@typescript-eslint/recommended'),
+  {
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
 ];
