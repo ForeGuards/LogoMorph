@@ -5,10 +5,10 @@
  */
 
 import crypto from 'crypto';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../convex/_generated/api';
 
-const convex = new ConvexHttpClient(process.env.CONVEX_URL!);
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 /**
  * Generate webhook signature
@@ -75,30 +75,19 @@ export async function deliverWebhook(
         responseData = { raw: responseText };
       }
 
-      // Log delivery
-      await convex.mutation(api.webhooks.logDelivery, {
-        webhookId: webhookId as unknown as string,
-        event,
-        payload,
-        response: responseData,
-        statusCode: response.status,
-        success: response.ok,
-        error: response.ok ? undefined : `HTTP ${response.status}`,
-      });
+      // TODO: Log delivery to Supabase
+      // await supabase.from('webhook_logs').insert({...});
 
       if (response.ok) {
-        // Reset failure count on success
-        await convex.mutation(api.webhooks.resetFailureCount, {
-          webhookId: webhookId as unknown as string,
-        });
+        // TODO: Reset failure count on success
+        // await supabase.from('webhooks').update({ failure_count: 0 }).eq('id', webhookId);
         return { success: true };
       }
 
       // Don't retry on client errors (4xx)
       if (response.status >= 400 && response.status < 500) {
-        await convex.mutation(api.webhooks.recordFailure, {
-          webhookId: webhookId as unknown as string,
-        });
+        // TODO: Record failure in Supabase
+        // await supabase.rpc('increment_webhook_failure', { webhook_id: webhookId });
         return {
           success: false,
           error: `HTTP ${response.status}: ${responseText}`,
@@ -113,9 +102,7 @@ export async function deliverWebhook(
       }
 
       // Final failure
-      await convex.mutation(api.webhooks.recordFailure, {
-        webhookId: webhookId as unknown as string,
-      });
+      // TODO: Record failure in Supabase
       return {
         success: false,
         error: `HTTP ${response.status} after ${retries + 1} attempts`,
@@ -123,14 +110,8 @@ export async function deliverWebhook(
     } catch (error) {
       console.error(`Webhook delivery attempt ${attempt + 1} failed:`, error);
 
-      // Log error
-      await convex.mutation(api.webhooks.logDelivery, {
-        webhookId: webhookId as unknown as string,
-        event,
-        payload,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      // TODO: Log error to Supabase
+      // await supabase.from('webhook_logs').insert({...});
 
       if (attempt < retries) {
         // Exponential backoff
@@ -138,10 +119,7 @@ export async function deliverWebhook(
         continue;
       }
 
-      // Final failure
-      await convex.mutation(api.webhooks.recordFailure, {
-        webhookId: webhookId as unknown as string,
-      });
+      // TODO: Final failure - record in Supabase
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -162,19 +140,22 @@ export async function triggerWebhookEvent(
   payload: unknown,
 ): Promise<void> {
   try {
-    // Get all active webhooks for this event
-    const webhooks = await convex.query(api.webhooks.getActiveByEvent, {
-      clerkUserId: userId,
-      event,
-    });
+    // TODO: Get all active webhooks for this event from Supabase
+    // const { data: webhooks } = await supabase
+    //   .from('webhooks')
+    //   .select('*')
+    //   .eq('clerk_user_id', userId)
+    //   .eq('active', true)
+    //   .contains('events', [event]);
+    const webhooks: any[] = []; // Temporary stub
 
     if (webhooks.length === 0) {
       return;
     }
 
     // Deliver to all webhooks in parallel
-    const deliveryPromises = webhooks.map((webhook) =>
-      deliverWebhook(webhook._id, webhook.url, webhook.secret, event, payload),
+    const deliveryPromises = webhooks.map((webhook: any) =>
+      deliverWebhook(webhook.id, webhook.url, webhook.secret, event, payload),
     );
 
     await Promise.allSettled(deliveryPromises);

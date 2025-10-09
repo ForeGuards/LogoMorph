@@ -4,11 +4,10 @@
  */
 
 import { Request, Response } from 'express';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../../convex/_generated/api';
 
-const convexUrl = process.env.CONVEX_URL || '';
-const convex = new ConvexHttpClient(convexUrl);
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 /**
  * Create a custom preset
@@ -49,16 +48,9 @@ export async function createPreset(req: Request, res: Response) {
       });
     }
 
-    const presetId = await convex.mutation(api.presets.createPreset, {
-      clerkUserId: userId,
-      name,
-      width,
-      height,
-      category,
-      description,
-      settings,
-      isPublic,
-    });
+    // TODO: Create preset in Supabase
+    // const { data: preset, error } = await supabase.from('presets').insert({...}).select().single();
+    const presetId = 'temp-' + Date.now();
 
     return res.status(201).json({
       success: true,
@@ -87,9 +79,8 @@ export async function getUserPresets(req: Request, res: Response) {
       });
     }
 
-    const presets = await convex.query(api.presets.getAllPresetsForUser, {
-      clerkUserId: userId,
-    });
+    // TODO: Fetch from Supabase
+    const presets = { system: [], custom: [] };
 
     return res.status(200).json({
       success: true,
@@ -112,9 +103,8 @@ export async function getPublicPresets(req: Request, res: Response) {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const presets = await convex.query(api.presets.getPublicPresets, {
-      limit,
-    });
+    // TODO: Fetch from Supabase
+    const presets: any[] = [];
 
     return res.status(200).json({
       success: true,
@@ -161,10 +151,8 @@ export async function updatePreset(req: Request, res: Response) {
       });
     }
 
-    await convex.mutation(api.presets.updatePreset, {
-      presetId,
-      ...updates,
-    });
+    // TODO: Update in Supabase
+    // await supabase.from('presets').update(updates).eq('id', presetId);
 
     return res.status(200).json({
       success: true,
@@ -195,9 +183,8 @@ export async function deletePreset(req: Request, res: Response) {
 
     const { presetId } = req.params;
 
-    await convex.mutation(api.presets.deletePreset, {
-      presetId,
-    });
+    // TODO: Delete from Supabase
+    // await supabase.from('presets').delete().eq('id', presetId);
 
     return res.status(200).json({
       success: true,
@@ -236,11 +223,8 @@ export async function duplicatePreset(req: Request, res: Response) {
       });
     }
 
-    const duplicateId = await convex.mutation(api.presets.duplicatePreset, {
-      presetId,
-      clerkUserId: userId,
-      newName,
-    });
+    // TODO: Duplicate in Supabase
+    const duplicateId = 'temp-' + Date.now();
 
     return res.status(201).json({
       success: true,

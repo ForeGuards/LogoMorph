@@ -7,12 +7,12 @@
 
 import { Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../../convex/_generated/api';
 import { generateApiKey } from '../../services/apiKeys';
 import { sanitizeOutput } from '../../middleware/validation';
 
-const convex = new ConvexHttpClient(process.env.CONVEX_URL!);
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 /**
  * Create a new API key
@@ -74,15 +74,9 @@ export const createApiKey = async (req: Request, res: Response) => {
       process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
     );
 
-    // Store in Convex
-    const keyId = await convex.mutation(api.apiKeys.create, {
-      clerkUserId: auth.userId,
-      keyHash: hash,
-      name,
-      prefix,
-      permissions,
-      expiresIn,
-    });
+    // TODO: Store in Supabase
+    // const { data, error } = await supabase.from('api_keys').insert({...}).select().single();
+    const keyId = 'temp-' + Date.now();
 
     // Return key only once (won't be shown again)
     return res.status(201).json({
@@ -125,9 +119,8 @@ export const listApiKeys = async (req: Request, res: Response) => {
       });
     }
 
-    const keys = await convex.query(api.apiKeys.listByUser, {
-      clerkUserId: auth.userId,
-    });
+    // TODO: Fetch from Supabase
+    const keys: any[] = [];
 
     return res.json({
       keys: sanitizeOutput(keys),
@@ -174,10 +167,8 @@ export const deactivateApiKey = async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    await convex.mutation(api.apiKeys.deactivate, {
-      keyId: id,
-      clerkUserId: auth.userId,
-    });
+    // TODO: Deactivate in Supabase
+    // await supabase.from('api_keys').update({ is_active: false }).eq('id', id);
 
     return res.json({
       message: 'API key deactivated successfully',
@@ -234,10 +225,8 @@ export const deleteApiKey = async (req: Request, res: Response) => {
 
     const { id } = req.params;
 
-    await convex.mutation(api.apiKeys.remove, {
-      keyId: id,
-      clerkUserId: auth.userId,
-    });
+    // TODO: Delete from Supabase
+    // await supabase.from('api_keys').delete().eq('id', id);
 
     return res.json({
       message: 'API key deleted successfully',

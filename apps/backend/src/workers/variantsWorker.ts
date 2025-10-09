@@ -15,12 +15,10 @@ import {
 } from '../services/generation/backgroundGenerator';
 import { fileStorageService } from '../services/storage/fileStorage';
 import { imageCompositorService } from '../services/generation/imageCompositor';
-import { api } from '../../../../convex/_generated/api';
-import type { Id } from '../../../../convex/_generated/dataModel';
 
-// Import Convex client for storing results
-import { ConvexHttpClient } from 'convex/browser';
-const convex = new ConvexHttpClient(process.env.CONVEX_URL || '');
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 class VariantsWorker {
   private worker: Worker;

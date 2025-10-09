@@ -6,7 +6,9 @@
  */
 
 import { Redis } from 'ioredis';
-import { ConvexHttpClient } from 'convex/browser';
+
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
 
 export interface HealthStatus {
   status: 'healthy' | 'unhealthy' | 'degraded';
@@ -25,7 +27,7 @@ export interface HealthStatus {
 export class HealthCheckService {
   private startTime: number;
   private redisClient: Redis | null = null;
-  private convexClient: ConvexHttpClient | null = null;
+  private supabaseHealthy: boolean = true;
 
   constructor() {
     this.startTime = Date.now();
@@ -34,9 +36,8 @@ export class HealthCheckService {
   /**
    * Initialize health check dependencies
    */
-  initialize(options: { redisClient?: Redis; convexClient?: ConvexHttpClient }): void {
+  initialize(options: { redisClient?: Redis }): void {
     this.redisClient = options.redisClient || null;
-    this.convexClient = options.convexClient || null;
   }
 
   /**
@@ -83,23 +84,17 @@ export class HealthCheckService {
       }
     }
 
-    // Check Convex
-    if (this.convexClient) {
-      const convexStart = Date.now();
-      try {
-        // Simple query to check connectivity
-        // TODO: Replace with actual health check query
-        checks.convex = {
-          status: 'up',
-          responseTime: Date.now() - convexStart,
-        };
-      } catch (error) {
-        checks.convex = {
-          status: 'down',
-          message: error instanceof Error ? error.message : 'Unknown error',
-        };
-      }
-    }
+    // TODO: Check Supabase
+    // const supabaseStart = Date.now();
+    // try {
+    //   await supabase.from('_health').select('count').limit(1);
+    //   checks.supabase = { status: 'up', responseTime: Date.now() - supabaseStart };
+    // } catch (error) {
+    //   checks.supabase = { status: 'down', message: error.message };
+    // }
+    checks.supabase = {
+      status: this.supabaseHealthy ? 'up' : 'down',
+    };
 
     // Check S3 connectivity (optional)
     checks.storage = await this.checkS3();

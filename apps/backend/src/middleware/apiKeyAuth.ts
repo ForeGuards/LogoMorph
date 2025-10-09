@@ -11,11 +11,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { getAuth } from '@clerk/express';
 import { validateApiKeyFormat, hashApiKey, hasPermission } from '../services/apiKeys';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../convex/_generated/api';
 
-// Initialize Convex client
-const convex = new ConvexHttpClient(process.env.CONVEX_URL!);
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 export interface ApiKeyAuthContext {
   userId: string;
@@ -67,7 +66,9 @@ export const authenticateRequest = async (req: Request, res: Response, next: Nex
   const keyHash = hashApiKey(apiKey);
 
   try {
-    const keyData = await convex.query(api.apiKeys.getByHash, { keyHash });
+    // TODO: Validate API key with Supabase
+    // const { data: keyData, error } = await supabase.from('api_keys').select('*').eq('key_hash', keyHash).single();
+    const keyData: any = null; // Temporary stub
 
     if (!keyData) {
       return res.status(401).json({
@@ -76,8 +77,8 @@ export const authenticateRequest = async (req: Request, res: Response, next: Nex
       });
     }
 
-    // Update last used timestamp (fire and forget)
-    convex.mutation(api.apiKeys.updateLastUsed, { keyId: keyData._id }).catch(console.error);
+    // TODO: Update last used timestamp (fire and forget)
+    // supabase.from('api_keys').update({ last_used_at: new Date() }).eq('id', keyData.id).then().catch(console.error);
 
     // Attach API key info to request
     req.apiKey = {
@@ -169,17 +170,19 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     const keyHash = hashApiKey(apiKey);
 
     try {
-      const keyData = await convex.query(api.apiKeys.getByHash, { keyHash });
+      // TODO: Validate API key with Supabase
+      // const { data: keyData } = await supabase.from('api_keys').select('*').eq('key_hash', keyHash).single();
+      const keyData: any = null; // Temporary stub
 
       if (keyData) {
         req.apiKey = {
-          userId: keyData.clerkUserId,
-          keyId: keyData._id,
+          userId: keyData.clerk_user_id,
+          keyId: keyData.id,
           permissions: keyData.permissions,
         };
 
-        // Update last used (fire and forget)
-        convex.mutation(api.apiKeys.updateLastUsed, { keyId: keyData._id }).catch(console.error);
+        // TODO: Update last used (fire and forget)
+        // supabase.from('api_keys').update({ last_used_at: new Date() }).eq('id', keyData.id).then().catch(console.error);
       }
     } catch (error) {
       console.error('Optional auth error:', error);

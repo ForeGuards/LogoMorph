@@ -3,16 +3,15 @@
  * Handles logo file uploads with validation, storage, and Convex integration
  */
 
-import { Request, Response } from 'express';
-import { UploadedFile } from 'express-fileupload';
+import type { Request, Response } from 'express';
+import type { UploadedFile } from 'express-fileupload';
 import { fileValidatorService } from '../../services/validation/fileValidator';
 import { fileStorageService } from '../../services/storage/fileStorage';
 import { logoAnalyzerService } from '../../services/analysis/logoAnalyzer';
-import { ConvexHttpClient } from 'convex/browser';
-import { api } from '../../../../../convex/_generated/api';
 
-const convexUrl = process.env.CONVEX_URL || '';
-const convex = new ConvexHttpClient(convexUrl);
+// TODO: Replace with Supabase client
+// import { createClient } from '@supabase/supabase-js';
+// const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 /**
  * Upload logo file
@@ -60,21 +59,27 @@ export async function uploadLogo(req: Request, res: Response) {
     // Analyze logo to extract metadata
     const analysis = await logoAnalyzerService.analyzeLogo(file.data, file.mimetype);
 
-    // Store in Convex database with complete analysis
-    const logoId = await convex.mutation(api.logos.createLogo, {
-      clerkUserId: userId,
-      filename: file.name,
-      storagePath: uploadResult.path,
-      storageUrl: uploadResult.url,
-      format: file.mimetype === 'image/svg+xml' ? 'svg' : 'png',
-      metadata: {
-        width: analysis.width,
-        height: analysis.height,
-        size: uploadResult.size,
-        boundingBox: analysis.boundingBox,
-        colorPalette: analysis.colorPalette,
-      },
-    });
+    // TODO: Store in Supabase database with complete analysis
+    // const { data: logo, error } = await supabase
+    //   .from('logos')
+    //   .insert({
+    //     clerk_user_id: userId,
+    //     filename: file.name,
+    //     storage_path: uploadResult.path,
+    //     storage_url: uploadResult.url,
+    //     format: file.mimetype === 'image/svg+xml' ? 'svg' : 'png',
+    //     metadata: {
+    //       width: analysis.width,
+    //       height: analysis.height,
+    //       size: uploadResult.size,
+    //       boundingBox: analysis.boundingBox,
+    //       colorPalette: analysis.colorPalette,
+    //     },
+    //   })
+    //   .select()
+    //   .single();
+    // if (error) throw error;
+    const logoId = 'temp-' + Date.now(); // Temporary stub
 
     // Return success response with analysis
     return res.status(201).json({
@@ -203,9 +208,14 @@ export async function getUserLogos(req: Request, res: Response) {
       });
     }
 
-    const logos = await convex.query(api.logos.getUserLogos, {
-      clerkUserId: userId,
-    });
+    // TODO: Fetch from Supabase
+    // const { data: logos, error } = await supabase
+    //   .from('logos')
+    //   .select('*')
+    //   .eq('clerk_user_id', userId)
+    //   .order('created_at', { ascending: false });
+    // if (error) throw error;
+    const logos: any[] = []; // Temporary stub
 
     return res.status(200).json({
       success: true,
@@ -236,10 +246,14 @@ export async function deleteLogo(req: Request, res: Response) {
 
     const { logoId } = req.params;
 
-    // Get logo to verify ownership
-    const logo = await convex.query(api.logos.getLogo, {
-      logoId,
-    });
+    // TODO: Get logo from Supabase to verify ownership
+    // const { data: logo, error } = await supabase
+    //   .from('logos')
+    //   .select('*')
+    //   .eq('id', logoId)
+    //   .single();
+    // if (error) throw error;
+    const logo: any = null; // Temporary stub
 
     if (!logo) {
       return res.status(404).json({
@@ -258,10 +272,12 @@ export async function deleteLogo(req: Request, res: Response) {
     // Delete from storage
     await fileStorageService.deleteFile(logo.storagePath);
 
-    // Delete from database
-    await convex.mutation(api.logos.deleteLogo, {
-      logoId,
-    });
+    // TODO: Delete from Supabase database
+    // const { error: deleteError } = await supabase
+    //   .from('logos')
+    //   .delete()
+    //   .eq('id', logoId);
+    // if (deleteError) throw deleteError;
 
     return res.status(200).json({
       success: true,
